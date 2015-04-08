@@ -31,6 +31,7 @@ I use select2.js to allow user to filter passed objects similar to django's inte
 
 Its a very basic implementation and I tried to make it as generic as possible but would love to know the feedback and issues and pull requests to make it better.
 
+Also currently the render file holds everything for HTML and JS code. Need to be moved in to selecthelper.js and some template
 
 Thanks
 
