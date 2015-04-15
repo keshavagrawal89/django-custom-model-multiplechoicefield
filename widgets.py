@@ -1,4 +1,6 @@
 from django import forms
+from django.utils.safestring import mark_safe
+
 
 class CustomSelectMultipleWidget(forms.Widget):
     """
@@ -22,6 +24,10 @@ class CustomSelectMultipleWidget(forms.Widget):
     media = property(_media)
 
     def render(self, name, value, attrs=None):
+        """
+        Overriding the render function to give the widget its html view
+        implementing select2.js view as well.
+        """
         output = list()
         options = list()
         cleaned_data = self.clean_query()
@@ -29,7 +35,6 @@ class CustomSelectMultipleWidget(forms.Widget):
         div_start = "<div>"
         div_selected_start = "<br><div style=''><span>Select %s to assign:</span>" % name
         div_end = "</div>"
-        
         select_start_tag = "<select id='%s' name='%s' multiple='multiple' size=20 " \
             "style='width: 25%%; height: 100px; overflow: scroll'>" % (
                 attrs['id'], attrs['id'])
@@ -38,18 +43,22 @@ class CustomSelectMultipleWidget(forms.Widget):
         option_end_tag = "</option>"
         span_new_obj_tag = "<span style='margin-left: 6%%'>Assigned %s:</span>" % name.title()
 
-        delete_from_existing = "<span id='id_unallocate_%(name)s'><span tooltip='Un-assign %(name)s!' " \
+        delete_from_existing = "<span id='id_unallocate_%(name)s'><" \
+                               "span tooltip='Un-assign %(name)s!' " \
             "style='margin-left: 10%%; cursor: pointer'>&#x25c4;" \
             "&#x25c4;&#x25c4;</span><span style='font-weight: bold; " \
-            "cursor: pointer'>&nbsp;&nbsp;Un-assign %(title_name)s</span></span>" % {'name': name, 'title_name': name.title()}
+            "cursor: pointer'>&nbsp;&nbsp;Un-assign %(title_name)s</span>" \
+                               "</span>" % {'name': name, 'title_name': name.title()}
 
         choose_all_tag = "<span style='margin-left: 15%; cursor: pointer' " \
                          "id='choose_all'>Choose All &#x25ba;&#x25ba;</span>"
         remove_all_tag = "<span style='margin-left: 55%; cursor: pointer' " \
                          "id='remove_all'>&#x25c4;&#x25c4; Remove All</span>"
 
-        message_div = "<br><div style='text-alignment: center; display:none; width: 100%%' id='message_span'><span style='font-weight: bold; " \
-                      "text-alignment: center; margin-left: 45%%'>All %s have been selected </span>" \
+        message_div = "<br><div style='text-alignment: center; display:none; width: 100%%' " \
+                      "id='message_span'><span style='font-weight: bold; " \
+                      "text-alignment: center; margin-left: 45%%'>" \
+                      "All %s have been selected </span>" \
                       "</div>" % name
 
         spinner_div = "<div id='spinner' style='margin-left: 50%; display: none" \
@@ -77,7 +86,7 @@ class CustomSelectMultipleWidget(forms.Widget):
             for obj in value:
                 option_text = ', '.join([getattr(obj, key) for key in self.fields_order])
                 selected_options.append("%s%s%s" % (option_start_tag % (obj.id, obj.id),
-                                        option_text, option_end_tag))
+                                                    option_text, option_end_tag))
             output.append("%s\n%s\n%s\n</span>%s" % (
                 selected_objects_start_tag, '\n'.join(selected_options), select_end_tag, div_end))
 
@@ -163,7 +172,7 @@ class CustomSelectMultipleWidget(forms.Widget):
         A method to take care of the formatting in which the data is desired
         :return: dict
 
-        It returns a dict with key as 'id' of the object and value as list of all the 
+        It returns a dict with key as 'id' of the object and value as list of all the
         other column values passed as query object.
 
         Example: Schools
@@ -184,22 +193,25 @@ class CustomSelectMultipleWidget(forms.Widget):
         except ValueError:
             # This exception would mean 'id' was not passed. Thats a good thing.
             pass
-        return {obj['id']: [obj[key] if obj[key] else 'N/A' for key in keys] for obj in self.query}
+        return {obj['id']: [obj[key] if obj[key] else 'N/A' for key in keys]
+                for obj in self.query}
 
     def value_from_datadict(self, data, files, name):
         """
         Overriding this method to do custom operation
 
-        :param data: gives you a django query dict which needs to be converted to a python dict
+        :param data: gives you a django query dict
+                    which needs to be converted to a python dict
         :param files: if any file uploaded
         :param name: name of the field
-        :return: python dict or blank list if key not found - can happen as the field is not mandatory
+        :return: python dict or blank list if key not found -
+            can happen as the field is not mandatory
         """
         try:
             return dict(data.iterlists())['id_%s' % name]
         except KeyError:
             logger.info("Input with id - 'id_%(name)ss' was not found in the submitted form. "
                         "Please check if this was intentional. "
-                        "This just means that no %(name)s was assigned to the user" % {})
+                        "This just means that no %(name)s was assigned to the user" % {'name': name})
             return []
 

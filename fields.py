@@ -1,4 +1,8 @@
+"""
+Defining all the custom fields here.
+"""
 from django import forms
+from widgets import CustomSelectMultipleWidget
 
 
 class CustomModelMultipleChoiceField(forms.Field):
@@ -10,5 +14,11 @@ class CustomModelMultipleChoiceField(forms.Field):
         super(CustomModelMultipleChoiceField, self).__init__(*args, **kwargs)
 
     def clean(self, value):
+        """
+         Overriding clean method where we actually get the queryset
+         objects
+        :param value:
+        :return:
+        """
         objects = self.query_object.objects.filter(id__in=value)
         return objects
